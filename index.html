@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>050 \u2022 Training Log \u2013 AppADay</title>
+<style>
+:root {
+  --bg:#0e1117; --surface:#161b26; --card:#1e2535; --border:#2a3347;
+  --accent:#3b82f6; --accent2:#10b981; --accent3:#f59e0b; --danger:#ef4444;
+  --text:#e8eaf0; --muted:#8892a4; --radius:10px;
+  --font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono','Fira Code',monospace;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100dvh;display:flex;flex-direction:column;}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;}
+.nav-badge{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);padding:3px 8px;border-radius:4px;letter-spacing:0.05em;}
+.nav-title{font-size:15px;font-weight:600;letter-spacing:-0.01em;flex:1;text-align:center;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.nav-home{font-size:12px;color:var(--muted);text-decoration:none;transition:color 0.15s;}
+.nav-home:hover{color:var(--text);}
+.gear-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px;transition:color 0.15s;}
+.gear-btn:hover{color:var(--text);}
+
+/* MAIN */
+.main{flex:1;max-width:900px;width:100%;margin:0 auto;padding:24px 16px 40px;display:flex;flex-direction:column;gap:20px;}
+
+/* STATS */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px;text-align:center;}
+.stat-val{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--accent);line-height:1.1;}
+.stat-val.green{color:var(--accent2);}
+.stat-val.amber{color:var(--accent3);}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px;}
+
+/* PANEL */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.panel-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+
+/* CHART CONTROLS */
+.chart-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.toggle-group{display:flex;gap:3px;}
+.toggle-btn{font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chart-sep{width:1px;height:20px;background:var(--border);}
+canvas#chart{width:100%;height:180px;display:block;cursor:crosshair;}
+.chart-tooltip{position:absolute;background:rgba(14,17,23,0.92);border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:12px;font-family:var(--mono);color:var(--text);pointer-events:none;white-space:nowrap;z-index:10;display:none;}
+.chart-wrap{position:relative;}
+.shoe-indicator{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.shoe-indicator span{color:var(--accent2);font-weight:600;}
+.btn-edit{background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:var(--accent);padding:8px 16px;border-radius:6px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.btn-edit:hover{opacity:0.8;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;}
+.modal-actions .btn{flex:1;}
+
+/* WEEK DOTS */
+.week-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;}
+.week-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.day-cell{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.day-name{font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:600;}
+.day-dot{width:32px;height:32px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);transition:background 0.15s;}
+.day-dot.has-run{background:rgba(59,130,246,0.25);border-color:var(--accent);color:var(--accent);}
+.day-dot.today{border-color:var(--accent3);}
+.day-dist{font-size:8px;color:var(--muted);font-family:var(--mono);}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field.full{grid-column:1/-1;}
+label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+input,select,textarea{background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font);font-size:14px;padding:9px 11px;width:100%;outline:none;transition:border-color 0.15s;-webkit-appearance:none;min-width:0;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+select option{background:var(--surface);}
+textarea{resize:vertical;min-height:60px;}
+.fuel-entries{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.fuel-row{display:flex;gap:6px;align-items:center;}
+.fuel-row input{flex:1;}
+.fuel-row select{flex:1;}
+.fuel-time{width:80px!important;flex:0 0 80px;}
+.btn-icon{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;transition:color 0.15s;}
+.btn-icon:hover{color:var(--danger);}
+.btn{padding:10px 20px;border-radius:6px;border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.15s,transform 0.1s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{opacity:0.88;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--text);color:var(--text);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.form-actions{display:flex;gap:8px;margin-top:4px;}
+
+/* TABLE */
+.entries-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;padding:8px 10px;border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid rgba(42,51,71,0.6);transition:background 0.12s;cursor:pointer;}
+tbody tr:hover{background:rgba(255,255,255,0.04);}
+tbody td{padding:9px 10px;vertical-align:middle;}
+.td-date{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.td-dist{font-family:var(--mono);font-weight:600;color:var(--accent);}
+.td-pace{font-family:var(--mono);font-size:12px;}
+.td-feel{font-size:18px;line-height:1;}
+.td-del{background:none;border:none;color:var(--border);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:4px;transition:color 0.15s;}
+.td-del:hover{color:var(--danger);}
+.td-edit{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;transition:color 0.15s;}
+.td-edit:hover{color:var(--accent);}
+.td-actions{white-space:nowrap;}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.type-pill{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;text-transform:uppercase;letter-spacing:0.04em;}
+.pill-easy{background:rgba(16,185,129,0.15);color:var(--accent2);}
+.pill-tempo{background:rgba(245,158,11,0.15);color:var(--accent3);}
+.pill-long{background:rgba(59,130,246,0.15);color:var(--accent);}
+.pill-interval{background:rgba(239,68,68,0.15);color:var(--danger);}
+.pill-race{background:rgba(168,85,247,0.15);color:#a855f7;}
+.pill-rest{background:rgba(136,146,164,0.15);color:var(--muted);}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
+.empty-state .big{font-size:36px;margin-bottom:10px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:480px;width:100%;max-height:90dvh;overflow-y:auto;padding:24px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.detail-item{display:flex;flex-direction:column;gap:3px;}
+.detail-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+.detail-val{font-size:15px;font-weight:500;}
+.detail-val.mono{font-family:var(--mono);}
+.detail-full{grid-column:1/-1;}
+.detail-note{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--muted);line-height:1.5;}
+.fuel-list{display:flex;flex-direction:column;gap:6px;margin-top:6px;}
+.fuel-item{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:13px;display:flex;gap:10px;align-items:center;}
+.fuel-item-time{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.modal-del-btn{margin-top:18px;width:100%;}
+
+/* SETTINGS MODAL */
+.settings-section{margin-bottom:20px;}
+.settings-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;}
+.shoe-list,.fuel-preset-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.shoe-item,.fuel-preset-item{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;}
+.shoe-item label,.fuel-preset-item label{font-size:13px;flex:1;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);cursor:pointer;}
+.shoe-radio{accent-color:var(--accent);}
+.add-row{display:flex;gap:8px;}
+.add-row input{flex:1;}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .stat-row{grid-template-columns:repeat(2,1fr);}
+  .form-grid{grid-template-columns:1fr;}
+  .field.full{grid-column:1;}
+  .chart-controls{gap:4px;}
+  thead th:nth-child(3),tbody td:nth-child(3){display:none;}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-badge">050</span>
+  <span class="nav-title">Training Log</span>
+  <div class="nav-right">
+    <button class="gear-btn" onclick="openSettings()" title="Settings">&#9881;</button>
+    <a class="nav-home" href="https://augustineiacopelli.github.io/appaday/">&#8592; All Apps</a>
+  </div>
+</nav>
+
+<div class="main">
+
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-val" id="statTotal">0.0</div><div class="stat-lbl">Total Miles</div></div>
+    <div class="stat-card"><div class="stat-val green" id="statRuns">0</div><div class="stat-lbl">Total Runs</div></div>
+    <div class="stat-card"><div class="stat-val amber" id="statWeek">0.0</div><div class="stat-lbl">This Week</div></div>
+    <div class="stat-card"><div class="stat-val" id="statAvgPace">&mdash;</div><div class="stat-lbl">Avg Pace</div></div>
+  </div>
+
+  <div class="week-bar">
+    <div class="week-label">This Week</div>
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Weekly Mileage</span>
+      <div class="chart-controls">
+        <div class="toggle-group" id="rangeGroup">
+          <button class="toggle-btn" id="btn1w" onclick="setChartRange('1w')">1W</button>
+          <button class="toggle-btn" id="btn2w" onclick="setChartRange('2w')">2W</button>
+          <button class="toggle-btn" id="btn4w" onclick="setChartRange('4w')">4W</button>
+          <button class="toggle-btn active" id="btn12w" onclick="setChartRange('12w')">12W</button>
+          <button class="toggle-btn" id="btn26w" onclick="setChartRange('26w')">26W</button>
+          <button class="toggle-btn" id="btnAll" onclick="setChartRange('all')">All</button>
+        </div>
+        <div class="chart-sep"></div>
+        <div class="toggle-group" id="typeGroup">
+          <button class="toggle-btn active" id="btnBar" onclick="setChartType('bar')">Bar</button>
+          <button class="toggle-btn" id="btnLine" onclick="setChartType('line')">Line</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+      <div class="chart-tooltip" id="chartTooltip"></div>
+    </div>
+    <div class="chart-legend" id="chartLegend"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Log a Run</span>
+      <div class="shoe-indicator" id="shoeIndicator" style="display:none;">👟 In: <span id="shoeIndicatorName"></span></div>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="fDate">Date</label>
+        <input type="date" id="fDate">
+      </div>
+      <div class="field">
+        <label for="fDist">Distance (miles)</label>
+        <input type="number" id="fDist" min="0" step="0.01" placeholder="3.10">
+      </div>
+      <div class="field">
+        <label for="fDuration">Duration (mm:ss or hh:mm:ss)</label>
+        <input type="text" id="fDuration" placeholder="28:30" maxlength="8">
+      </div>
+      <div class="field">
+        <label for="fType">Workout Type</label>
+        <select id="fType">
+          <option value="easy">Easy</option>
+          <option value="long">Long Run</option>
+          <option value="tempo">Tempo</option>
+          <option value="interval">Interval</option>
+          <option value="race">Race</option>
+          <option value="rest">Rest / Cross-Train</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fFeel">How'd it feel?</label>
+        <select id="fFeel">
+          <option value="great">&#128525; Great</option>
+          <option value="good" selected>&#128578; Good</option>
+          <option value="meh">&#128528; Meh</option>
+          <option value="tough">&#128553; Tough</option>
+          <option value="terrible">&#128169; Terrible</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Fuel Used (optional)</label>
+        <div class="fuel-entries" id="fuelEntries"></div>
+        <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:4px;" onclick="addFuelRow()">+ Add Fuel</button>
+      </div>
+      <div class="field full">
+        <label for="fNote">Notes (optional)</label>
+        <textarea id="fNote" placeholder="Weather, how you felt, route..."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="addRun()">Log Run</button>
+      <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Run History</span>
+      <span id="entryCount" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="entries-wrap"><div id="tableWrap"></div></div>
+  </div>
+
+</div>
+
+<!-- RUN DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" style="display:none;" onclick="closeDetail(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title" id="detailTitle">Run Detail</span>
+      <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+    </div>
+    <div id="detailBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-edit" id="detailEditBtn">Edit Run</button>
+      <button class="btn btn-ghost" id="detailDelBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal" style="display:none;" onclick="closeSettingsOuter(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">Settings</span>
+      <button class="modal-close" onclick="closeSettings()">&times;</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Shoes</div>
+      <div class="shoe-list" id="shoeList"></div>
+      <div class="add-row">
+        <input type="text" id="newShoeName" placeholder="e.g. Hoka Clifton 9" maxlength="50">
+        <button class="btn btn-primary btn-sm" onclick="addShoe()">Add</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Fuel Presets</div>
+      <div class="fuel-preset-list" id="fuelPresetList"></div>
+      <div class="add-row">
+        <input type="text" id="newFuelName" placeholder="e.g. GU Salted Caramel" maxlength="60">
+        <button class="btn btn-primary btn-sm" onclick="addFuelPreset()">Add</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:8px;">
+      <button class="btn btn-primary" onclick="closeSettings()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var STORE_KEY = 'appaday-050-runs';
+var SETTINGS_KEY = 'appaday-050-settings';
+
+var FEEL_MAP = {
+  great: '\uD83D\uDE0D',
+  good:  '\uD83D\uDE42',
+  meh:   '\uD83D\uDE10',
+  tough: '\uD83D\uDE29',
+  terrible: '\uD83D\uDCA9'
+};
+
+// Legacy runs stored raw JS escape sequences as literal text (e.g. "\uD83D\uDE29").
+// This map translates those literal strings back to real emoji.
+var FEEL_LEGACY = {
+  '\\uD83D\\uDE0D': '\uD83D\uDE0D',
+  '\\uD83D\\uDE42': '\uD83D\uDE42',
+  '\\uD83D\\uDE10': '\uD83D\uDE10',
+  '\\uD83D\\uDE29': '\uD83D\uDE29',
+  '\\uD83D\\uDCA9': '\uD83D\uDCA9'
+};
+
+function resolveFeel(val) {
+  if (!val) return '\u2014';
+  if (FEEL_MAP[val]) return FEEL_MAP[val];
+  if (FEEL_LEGACY[val]) return FEEL_LEGACY[val];
+  return val;
+}
+
+var chartRange = '12w';
+var chartType = 'bar';
+var currentDetailId = null;
+var editingId = null;
+
+// ---- STORAGE ----
+function load() {
+  try { var r = localStorage.getItem(STORE_KEY); return r ? JSON.parse(r) : []; } catch(e) { return []; }
+}
+function save(runs) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(runs)); } catch(e) {}
+}
+function loadSettings() {
+  try {
+    var s = localStorage.getItem(SETTINGS_KEY);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return { shoes: [], activeShoe: '', fuelPresets: [] };
+}
+function saveSettings(s) {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e) {}
+}
+
+// ---- HELPERS ----
+function parseDuration(str) {
+  if (!str || !str.trim()) return null;
+  var parts = str.trim().split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return null;
+}
+function fmtDuration(secs) {
+  if (!secs) return '\u2014';
+  var h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
+  if (h > 0) return h + ':' + pad(m) + ':' + pad(s);
+  return m + ':' + pad(s);
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function calcPace(dist, secs) {
+  if (!dist || !secs || dist === 0) return null;
+  return Math.round(secs / dist);
+}
+function fmtPace(spm) {
+  if (!spm) return '\u2014';
+  return Math.floor(spm / 60) + ':' + pad(spm % 60) + '/mi';
+}
+function todayISO() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function weekStart(iso) {
+  var d = new Date(iso + 'T00:00:00');
+  var diff = (d.getDay() === 0) ? -6 : 1 - d.getDay();
+  d.setDate(d.getDate() + diff);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function addDays(iso, n) {
+  var d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function fmtDateShort(iso) {
+  var d = new Date(iso + 'T00:00:00');
+  return (d.getMonth() + 1) + '/' + d.getDate();
+}
+function fmtDateFull(iso) {
+  var d = new Date(iso + 'T00:00:00');
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+function pillClass(t) { return 'pill-' + t; }
+function pillLabel(t) {
+  return {easy:'Easy',long:'Long',tempo:'Tempo',interval:'Interval',race:'Race',rest:'Rest'}[t] || t;
+}
+
+// ---- CHART CONTROLS ----
+function setChartRange(r) {
+  chartRange = r;
+  var map = {'1w':'btn1w','2w':'btn2w','4w':'btn4w','12w':'btn12w','26w':'btn26w','all':'btnAll'};
+  Object.values(map).forEach(function(id) { document.getElementById(id).classList.remove('active'); });
+  document.getElementById(map[r]).classList.add('active');
+  drawChart(load());
+}
+function setChartType(t) {
+  chartType = t;
+  ['btnBar','btnLine'].forEach(function(id) { document.getElementById(id).classList.remove('active'); });
+  document.getElementById(t === 'bar' ? 'btnBar' : 'btnLine').classList.add('active');
+  drawChart(load());
+}
+
+// ---- STATS ----
+function updateStats(runs) {
+  var total = 0, weightedSecs = 0, totalDist = 0;
+  var today = todayISO(), ws = weekStart(today), we = addDays(ws, 6), weekMiles = 0;
+  runs.forEach(function(r) {
+    var dist = parseFloat(r.dist) || 0;
+    total += dist;
+    if (r.date >= ws && r.date <= we) weekMiles += dist;
+    if (r.secs && dist > 0) { weightedSecs += r.secs; totalDist += dist; }
+  });
+  document.getElementById('statTotal').textContent = total.toFixed(1);
+  document.getElementById('statRuns').textContent = runs.filter(function(r){ return r.type !== 'rest'; }).length;
+  document.getElementById('statWeek').textContent = weekMiles.toFixed(1);
+  var avgPace = totalDist > 0 ? calcPace(totalDist, weightedSecs) : null;
+  document.getElementById('statAvgPace').textContent = avgPace ? fmtPace(avgPace) : '\u2014';
+}
+
+// ---- WEEK DOTS ----
+function updateWeekDots(runs) {
+  var today = todayISO(), ws = weekStart(today);
+  var days = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  var grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  for (var i = 0; i < 7; i++) {
+    var iso = addDays(ws, i);
+    var miles = runs.filter(function(r){ return r.date === iso && r.type !== 'rest'; })
+                    .reduce(function(a, r){ return a + (parseFloat(r.dist) || 0); }, 0);
+    var cell = document.createElement('div'); cell.className = 'day-cell';
+    var nm = document.createElement('div'); nm.className = 'day-name'; nm.textContent = days[i];
+    var dot = document.createElement('div');
+    dot.className = 'day-dot' + (miles > 0 ? ' has-run' : '') + (iso === today ? ' today' : '');
+    dot.textContent = miles > 0 ? miles.toFixed(0) : '\u2014';
+    var dl = document.createElement('div'); dl.className = 'day-dist';
+    dl.textContent = miles > 0 ? miles.toFixed(1) + 'mi' : '';
+    cell.appendChild(nm); cell.appendChild(dot); cell.appendChild(dl);
+    grid.appendChild(cell);
+  }
+}
+
+// ---- CHART ----
+function drawChart(runs) {
+  var canvas = document.getElementById('chart');
+  var dpr = Math.round(window.devicePixelRatio || 1);
+  var W = canvas.offsetWidth, H = 180;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var isDayView = (chartRange === '1w' || chartRange === '2w' || chartRange === '4w');
+  var today = todayISO();
+  var buckets = [];
+
+  if (isDayView) {
+    buckets = buildDayBuckets(runs, today);
+    drawDayChart(ctx, buckets, W, H, today);
+  } else {
+    buckets = buildWeekBuckets(runs, today);
+    drawWeekChart(ctx, buckets, W, H, today);
+  }
+
+  // wire tooltip
+  wireTooltip(canvas, buckets, W, isDayView);
+}
+
+function renderLegend(types) {
+  var el = document.getElementById('chartLegend');
+  if (!el) return;
+  var labels = { race:'Race', interval:'Interval', tempo:'Tempo', long:'Long', easy:'Easy', rest:'Rest' };
+  el.innerHTML = types.map(function(t) {
+    var c = typeColor(t);
+    return '<div class="legend-item"><div class="legend-dot" style="background:' + c.hex + '"></div>' + (labels[t]||t) + '</div>';
+  }).join('');
+}
+
+function wireTooltip(canvas, buckets, W, isDayMode) {
+  var tip = document.getElementById('chartTooltip');
+  var pad = { l: 40, r: 12 };
+  var cW = W - pad.l - pad.r;
+  var spacing = buckets.length > 0 ? cW / buckets.length : 1;
+
+  canvas.onmousemove = function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var idx = Math.floor((mx - pad.l) / spacing);
+    if (idx < 0 || idx >= buckets.length) { tip.style.display = 'none'; return; }
+    var b = buckets[idx];
+    var label = isDayMode ? b.iso : ('Wk of ' + fmtDateShort(b.iso));
+    tip.textContent = label + ' \u2022 ' + b.miles.toFixed(1) + ' mi';
+    var tx = pad.l + idx * spacing + spacing / 2;
+    tip.style.left = Math.min(tx, W - 120) + 'px';
+    tip.style.top = '4px';
+    tip.style.display = 'block';
+  };
+  canvas.onmouseleave = function() { tip.style.display = 'none'; };
+  // touch support
+  canvas.ontouchmove = function(e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    var rect = canvas.getBoundingClientRect();
+    var mx = t.clientX - rect.left;
+    var idx = Math.floor((mx - pad.l) / spacing);
+    if (idx < 0 || idx >= buckets.length) { tip.style.display = 'none'; return; }
+    var b = buckets[idx];
+    var label = isDayMode ? b.iso : ('Wk of ' + fmtDateShort(b.iso));
+    tip.textContent = label + ' \u2022 ' + b.miles.toFixed(1) + ' mi';
+    tip.style.left = Math.min(mx, W - 120) + 'px';
+    tip.style.top = '4px';
+    tip.style.display = 'block';
+  };
+  canvas.ontouchend = function() { tip.style.display = 'none'; };
+}
+
+// ---- INTENSITY / COLOR HELPERS ----
+var TYPE_INTENSITY = { race:5, interval:4, tempo:3, long:2, easy:1, rest:0 };
+var TYPE_COLOR = {
+  race:     { hi:'rgba(168,85,247,0.9)',  lo:'rgba(168,85,247,0.3)',  line:'#a855f7',  hex:'#a855f7' },
+  interval: { hi:'rgba(239,68,68,0.9)',   lo:'rgba(239,68,68,0.3)',   line:'#ef4444',  hex:'#ef4444' },
+  tempo:    { hi:'rgba(245,158,11,0.9)',  lo:'rgba(245,158,11,0.3)',  line:'#f59e0b',  hex:'#f59e0b' },
+  long:     { hi:'rgba(59,130,246,0.85)', lo:'rgba(59,130,246,0.25)', line:'#3b82f6',  hex:'#3b82f6' },
+  easy:     { hi:'rgba(16,185,129,0.85)', lo:'rgba(16,185,129,0.25)', line:'#10b981',  hex:'#10b981' },
+  rest:     { hi:'rgba(136,146,164,0.5)', lo:'rgba(136,146,164,0.1)', line:'#8892a4',  hex:'#8892a4' }
+};
+var DEFAULT_COLOR = { hi:'rgba(59,130,246,0.85)', lo:'rgba(59,130,246,0.25)', line:'#3b82f6', hex:'#3b82f6' };
+
+function dominantType(runsInPeriod) {
+  if (!runsInPeriod.length) return null;
+  return runsInPeriod.reduce(function(best, r) {
+    return (TYPE_INTENSITY[r.type] || 0) > (TYPE_INTENSITY[best.type] || 0) ? r : best;
+  }).type;
+}
+
+function typeColor(type) {
+  return TYPE_COLOR[type] || DEFAULT_COLOR;
+}
+
+function buildDayBuckets(runs, today) {
+  var numDays = chartRange === '1w' ? 7 : chartRange === '2w' ? 14 : 28;
+  var startIso = addDays(today, -(numDays - 1));
+  var buckets = [];
+  for (var i = 0; i < numDays; i++) {
+    var iso = addDays(startIso, i);
+    var dayRuns = runs.filter(function(r){ return r.date === iso; });
+    var actRuns = dayRuns.filter(function(r){ return r.type !== 'rest'; });
+    var miles = actRuns.reduce(function(a,r){ return a + (parseFloat(r.dist)||0); }, 0);
+    var dom = dominantType(dayRuns);
+    buckets.push({ iso: iso, miles: miles, domType: dom });
+  }
+  return buckets;
+}
+
+function buildWeekBuckets(runs, today) {
+  var ws = weekStart(today);
+  var numWeeks;
+  if (chartRange === '12w') { numWeeks = 12; }
+  else if (chartRange === '26w') { numWeeks = 26; }
+  else {
+    if (runs.length === 0) { numWeeks = 8; }
+    else {
+      var earliest = runs.reduce(function(m,r){ return r.date < m ? r.date : m; }, runs[0].date);
+      var eWs = weekStart(earliest), n = 0, cur = eWs;
+      while (cur <= ws) { n++; cur = addDays(cur, 7); }
+      numWeeks = Math.max(n, 1);
+    }
+  }
+  var buckets = [];
+  for (var i = numWeeks - 1; i >= 0; i--) {
+    var wStart = addDays(ws, -i * 7);
+    var wEnd = addDays(wStart, 6);
+    var weekRuns = runs.filter(function(r){ return r.date >= wStart && r.date <= wEnd; });
+    var miles = weekRuns.filter(function(r){ return r.type !== 'rest'; })
+                        .reduce(function(a,r){ return a + (parseFloat(r.dist)||0); }, 0);
+    var dom = dominantType(weekRuns);
+    buckets.push({ iso: wStart, isCurrentWeek: (wStart === ws), miles: miles, domType: dom });
+  }
+  return buckets;
+}
+
+function drawDayChart(ctx, buckets, W, H, today) {
+  renderBuckets(ctx, buckets, W, H, today, true);
+}
+
+function drawWeekChart(ctx, buckets, W, H, today) {
+  renderBuckets(ctx, buckets, W, H, today, false);
+}
+
+function renderBuckets(ctx, buckets, W, H, today, dayMode) {
+  var maxMiles = Math.max.apply(null, buckets.map(function(b){ return b.miles; }));
+  if (maxMiles < 1) maxMiles = 10;
+
+  var pad = { t: 16, r: 12, b: 32, l: 40 };
+  var cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#1e2535';
+  ctx.fillRect(0, 0, W, H);
+
+  // grid lines
+  var gridLines = 4;
+  ctx.strokeStyle = 'rgba(42,51,71,0.8)'; ctx.lineWidth = 1; ctx.setLineDash([3,4]);
+  for (var g = 0; g <= gridLines; g++) {
+    var gy = pad.t + (cH / gridLines) * g;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + cW, gy); ctx.stroke();
+    ctx.fillStyle = 'rgba(136,146,164,0.7)'; ctx.font = '9px Inter,system-ui'; ctx.textAlign = 'right';
+    ctx.fillText((maxMiles * (gridLines - g) / gridLines).toFixed(0), pad.l - 4, gy + 3);
+  }
+  ctx.setLineDash([]);
+
+  if (buckets.length === 0) return;
+
+  var spacing = cW / buckets.length;
+  var barW = Math.max(2, spacing * 0.55);
+
+  // collect types present for legend
+  var typesPresent = [];
+  buckets.forEach(function(b) {
+    if (b.domType && b.miles > 0 && typesPresent.indexOf(b.domType) === -1) typesPresent.push(b.domType);
+  });
+  var typeOrder = ['race','interval','tempo','long','easy','rest'];
+  typesPresent.sort(function(a,b){ return typeOrder.indexOf(a) - typeOrder.indexOf(b); });
+  renderLegend(typesPresent);
+
+  if (chartType === 'line') {
+    // line itself is neutral - dots carry the type color
+    ctx.beginPath();
+    buckets.forEach(function(b, idx) {
+      var x = pad.l + idx * spacing + spacing / 2;
+      var y = pad.t + cH - (b.miles / maxMiles) * cH;
+      if (idx === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = 'rgba(136,146,164,0.45)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // dots - colored per bucket dominant type
+    buckets.forEach(function(b, idx) {
+      if (b.miles === 0) return;
+      var x = pad.l + idx * spacing + spacing / 2;
+      var y = pad.t + cH - (b.miles / maxMiles) * cH;
+      var isCurrent = dayMode ? (b.iso === today) : b.isCurrentWeek;
+      var col = isCurrent ? '#f59e0b' : (b.domType ? typeColor(b.domType).line : 'rgba(136,146,164,0.7)');
+      ctx.beginPath(); ctx.arc(x, y, isCurrent ? 5 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = col; ctx.fill();
+    });
+  } else {
+    // bars - colored per bucket
+    buckets.forEach(function(b, idx) {
+      var x = pad.l + idx * spacing + spacing / 2;
+      var barH = (b.miles / maxMiles) * cH;
+      var y = pad.t + cH - barH;
+      var isCurrent = dayMode ? (b.iso === today) : b.isCurrentWeek;
+      if (barH < 1) return;
+      var col = isCurrent ? { hi:'rgba(245,158,11,0.9)', lo:'rgba(245,158,11,0.3)' }
+                           : (b.domType ? typeColor(b.domType) : DEFAULT_COLOR);
+      var barGrad = ctx.createLinearGradient(x, y, x, pad.t + cH);
+      barGrad.addColorStop(0, col.hi); barGrad.addColorStop(1, col.lo);
+      ctx.fillStyle = barGrad;
+      var rr = Math.min(3, barW / 2), bx = x - barW / 2;
+      ctx.beginPath();
+      ctx.moveTo(bx + rr, y);
+      ctx.lineTo(bx + barW - rr, y);
+      ctx.arcTo(bx + barW, y, bx + barW, y + rr, rr);
+      ctx.lineTo(bx + barW, pad.t + cH);
+      ctx.lineTo(bx, pad.t + cH);
+      ctx.arcTo(bx, y, bx + rr, y, rr);
+      ctx.closePath();
+      ctx.fill();
+    });
+  }
+
+  // x labels
+  var step = Math.max(1, Math.floor(buckets.length / 8));
+  buckets.forEach(function(b, idx) {
+    if (idx % step !== 0) return;
+    var x = pad.l + idx * spacing + spacing / 2;
+    ctx.fillStyle = 'rgba(136,146,164,0.6)'; ctx.font = '9px Inter,system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(fmtDateShort(b.iso), x, H - 6);
+  });
+
+  ctx.fillStyle = 'rgba(136,146,164,0.5)'; ctx.font = '9px Inter,system-ui'; ctx.textAlign = 'left';
+  ctx.fillText('mi', 4, pad.t + 4);
+}
+
+// ---- TABLE ----
+function renderTable(runs) {
+  var wrap = document.getElementById('tableWrap');
+  var countEl = document.getElementById('entryCount');
+  if (runs.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="big">\uD83C\uDFC3</div><p>No runs logged yet.<br>Add your first run above.</p></div>';
+    countEl.textContent = ''; return;
+  }
+  var sorted = runs.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+  countEl.textContent = sorted.length + ' run' + (sorted.length !== 1 ? 's' : '');
+  var html = '<table><thead><tr><th>Date</th><th>Dist</th><th>Duration</th><th>Pace</th><th>Type</th><th>Feel</th><th></th></tr></thead><tbody>';
+  sorted.forEach(function(r) {
+    var pace = calcPace(parseFloat(r.dist), r.secs);
+    var feelEmoji = resolveFeel(r.feel);
+    html += '<tr onclick="openDetail(\'' + r.id + '\')">'
+      + '<td class="td-date">' + r.date + '</td>'
+      + '<td class="td-dist">' + (parseFloat(r.dist)||0).toFixed(2) + '</td>'
+      + '<td class="td-pace">' + fmtDuration(r.secs) + '</td>'
+      + '<td class="td-pace">' + fmtPace(pace) + '</td>'
+      + '<td><span class="type-pill ' + pillClass(r.type) + '">' + pillLabel(r.type) + '</span></td>'
+      + '<td class="td-feel">' + feelEmoji + '</td>'
+      + '<td class="td-actions"><button class="td-edit" onclick="event.stopPropagation();editRun(\'' + r.id + '\')" title="Edit">&#9998;</button><button class="td-del" onclick="event.stopPropagation();confirmDelete(\'' + r.id + '\')" title="Delete">\u00D7</button></td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ---- DETAIL MODAL ----
+function openDetail(id) {
+  var runs = load();
+  var r = runs.find(function(x){ return x.id === id; });
+  if (!r) return;
+  currentDetailId = id;
+  document.getElementById('detailTitle').textContent = fmtDateFull(r.date);
+  var pace = calcPace(parseFloat(r.dist), r.secs);
+  var feelEmoji = resolveFeel(r.feel);
+  var fuelHtml = '';
+  if (r.fuel && r.fuel.length > 0) {
+    fuelHtml = '<div class="detail-item detail-full"><div class="detail-lbl">Fuel</div><div class="fuel-list">'
+      + r.fuel.map(function(f){ return '<div class="fuel-item"><span class="fuel-item-time">' + (f.time||'') + '</span><span>' + esc(f.name) + '</span></div>'; }).join('')
+      + '</div></div>';
+  }
+  var shoeHtml = r.shoes ? '<div class="detail-item"><div class="detail-lbl">Shoes</div><div class="detail-val">' + esc(r.shoes) + '</div></div>' : '';
+  var noteHtml = r.note ? '<div class="detail-item detail-full"><div class="detail-lbl">Notes</div><div class="detail-note">' + esc(r.note) + '</div></div>' : '';
+  document.getElementById('detailBody').innerHTML = '<div class="detail-grid">'
+    + '<div class="detail-item"><div class="detail-lbl">Distance</div><div class="detail-val mono">' + (parseFloat(r.dist)||0).toFixed(2) + ' mi</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Duration</div><div class="detail-val mono">' + fmtDuration(r.secs) + '</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Pace</div><div class="detail-val mono">' + fmtPace(pace) + '</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Feel</div><div class="detail-val">' + feelEmoji + '</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Type</div><div class="detail-val"><span class="type-pill ' + pillClass(r.type) + '">' + pillLabel(r.type) + '</span></div></div>'
+    + shoeHtml
+    + fuelHtml
+    + noteHtml
+    + '</div>';
+  document.getElementById('detailDelBtn').onclick = function(){ confirmDelete(id); closeDetailModal(); };
+  document.getElementById('detailEditBtn').onclick = function(){ editRun(id); };
+  document.getElementById('detailModal').style.display = 'flex';
+}
+function closeDetail(e) { if (e.target === document.getElementById('detailModal')) closeDetailModal(); }
+function closeDetailModal() { document.getElementById('detailModal').style.display = 'none'; currentDetailId = null; }
+
+// ---- EDIT RUN ----
+function editRun(id) {
+  var runs = load();
+  var r = runs.find(function(x){ return x.id === id; });
+  if (!r) return;
+  closeDetailModal();
+  editingId = id;
+
+  // pre-populate form
+  document.getElementById('fDate').value = r.date;
+  document.getElementById('fDist').value = r.dist;
+  document.getElementById('fDuration').value = r.secs ? fmtDuration(r.secs) : '';
+  document.getElementById('fType').value = r.type || 'easy';
+  // resolve feel slug
+  var feelVal = r.feel;
+  if (FEEL_LEGACY[feelVal]) {
+    // legacy escaped emoji - map back to slug
+    var legacyToSlug = {};
+    legacyToSlug['\\uD83D\\uDE0D'] = 'great';
+    legacyToSlug['\\uD83D\\uDE42'] = 'good';
+    legacyToSlug['\\uD83D\\uDE10'] = 'meh';
+    legacyToSlug['\\uD83D\\uDE29'] = 'tough';
+    legacyToSlug['\\uD83D\\uDCA9'] = 'terrible';
+    feelVal = legacyToSlug[r.feel] || 'good';
+  }
+  document.getElementById('fFeel').value = feelVal;
+  document.getElementById('fNote').value = r.note || '';
+
+  // restore fuel rows
+  var container = document.getElementById('fuelEntries');
+  container.innerHTML = '';
+  if (r.fuel && r.fuel.length > 0) {
+    r.fuel.forEach(function(f) { addFuelRowWithValues(f.time, f.name); });
+  }
+
+  // update form button label and scroll to form
+  var logBtn = document.querySelector('.form-actions .btn-primary');
+  logBtn.textContent = 'Save Changes';
+  document.querySelector('.panel-header .panel-title').textContent = 'Edit Run';
+  document.querySelector('.panel:nth-of-type(3)').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function addFuelRowWithValues(timeVal, nameVal) {
+  var s = loadSettings();
+  var presets = (s.fuelPresets && s.fuelPresets.length > 0) ? s.fuelPresets : [];
+  var container = document.getElementById('fuelEntries');
+  var row = document.createElement('div'); row.className = 'fuel-row';
+  var timeInput = document.createElement('input');
+  timeInput.type = 'text'; timeInput.className = 'fuel-time'; timeInput.placeholder = '0:30';
+  timeInput.value = timeVal || '';
+  var nameEl;
+  if (presets.length > 0 && presets.indexOf(nameVal) !== -1) {
+    nameEl = document.createElement('select');
+    nameEl.innerHTML = '<option value="">-- Select fuel --</option>'
+      + presets.map(function(p){ return '<option value="' + esc(p) + '" ' + (p === nameVal ? 'selected' : '') + '>' + esc(p) + '</option>'; }).join('')
+      + '<option value="__custom__">Other...</option>';
+    nameEl.addEventListener('change', function() {
+      if (nameEl.value === '__custom__') {
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.placeholder = 'Fuel name'; inp.className = nameEl.className;
+        nameEl.parentNode.replaceChild(inp, nameEl);
+      }
+    });
+  } else {
+    nameEl = document.createElement('input');
+    nameEl.type = 'text'; nameEl.placeholder = 'Fuel name';
+    nameEl.value = nameVal || '';
+  }
+  var del = document.createElement('button'); del.className = 'btn-icon'; del.innerHTML = '&times;';
+  del.type = 'button'; del.onclick = function(){ container.removeChild(row); };
+  row.appendChild(timeInput); row.appendChild(nameEl); row.appendChild(del);
+  container.appendChild(row);
+}
+
+// ---- SETTINGS MODAL ----
+function openSettings() {
+  renderShoeList(); renderFuelPresetList();
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+function closeSettingsOuter(e) { if (e.target === document.getElementById('settingsModal')) closeSettings(); }
+
+function renderShoeList() {
+  var s = loadSettings();
+  var list = document.getElementById('shoeList');
+  if (s.shoes.length === 0) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--muted);">No shoes added yet.</p>'; return;
+  }
+  list.innerHTML = s.shoes.map(function(shoe, i) {
+    return '<div class="shoe-item">'
+      + '<input type="radio" class="shoe-radio" name="activeShoe" id="shoe' + i + '" value="' + esc(shoe) + '" ' + (s.activeShoe === shoe ? 'checked' : '') + ' onchange="setActiveShoe(\'' + escQ(shoe) + '\')">'
+      + '<label for="shoe' + i + '">' + esc(shoe) + '</label>'
+      + '<button class="btn-icon" onclick="removeShoe(' + i + ')" title="Remove">&times;</button>'
+      + '</div>';
+  }).join('');
+}
+
+function addShoe() {
+  var name = document.getElementById('newShoeName').value.trim();
+  if (!name) return;
+  var s = loadSettings();
+  if (s.shoes.indexOf(name) === -1) s.shoes.push(name);
+  if (!s.activeShoe) s.activeShoe = name;
+  saveSettings(s); document.getElementById('newShoeName').value = '';
+  renderShoeList();
+}
+function removeShoe(idx) {
+  var s = loadSettings(); var removed = s.shoes.splice(idx, 1)[0];
+  if (s.activeShoe === removed) s.activeShoe = s.shoes[0] || '';
+  saveSettings(s); renderShoeList();
+}
+function setActiveShoe(name) {
+  var s = loadSettings(); s.activeShoe = name; saveSettings(s); updateShoeIndicator();
+}
+
+function renderFuelPresetList() {
+  var s = loadSettings();
+  var list = document.getElementById('fuelPresetList');
+  if (!s.fuelPresets || s.fuelPresets.length === 0) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--muted);">No fuel presets yet.</p>'; return;
+  }
+  list.innerHTML = s.fuelPresets.map(function(f, i) {
+    return '<div class="fuel-preset-item">'
+      + '<label>' + esc(f) + '</label>'
+      + '<button class="btn-icon" onclick="removeFuelPreset(' + i + ')">&times;</button>'
+      + '</div>';
+  }).join('');
+}
+function addFuelPreset() {
+  var name = document.getElementById('newFuelName').value.trim();
+  if (!name) return;
+  var s = loadSettings();
+  if (!s.fuelPresets) s.fuelPresets = [];
+  if (s.fuelPresets.indexOf(name) === -1) s.fuelPresets.push(name);
+  saveSettings(s); document.getElementById('newFuelName').value = '';
+  renderFuelPresetList();
+}
+function removeFuelPreset(idx) {
+  var s = loadSettings(); s.fuelPresets.splice(idx, 1); saveSettings(s); renderFuelPresetList();
+}
+
+// ---- FUEL ROWS ----
+function addFuelRow() {
+  var s = loadSettings();
+  var presets = (s.fuelPresets && s.fuelPresets.length > 0) ? s.fuelPresets : [];
+  var container = document.getElementById('fuelEntries');
+  var row = document.createElement('div'); row.className = 'fuel-row';
+  var timeInput = document.createElement('input');
+  timeInput.type = 'text'; timeInput.className = 'fuel-time'; timeInput.placeholder = '0:30';
+  timeInput.title = 'Time into run (e.g. 0:30 or 1:15:00)';
+  var nameEl;
+  if (presets.length > 0) {
+    nameEl = document.createElement('select');
+    nameEl.innerHTML = '<option value="">-- Select fuel --</option>'
+      + presets.map(function(p){ return '<option value="' + esc(p) + '">' + esc(p) + '</option>'; }).join('')
+      + '<option value="__custom__">Other...</option>';
+    nameEl.addEventListener('change', function() {
+      if (nameEl.value === '__custom__') {
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.placeholder = 'Fuel name'; inp.className = nameEl.className;
+        nameEl.parentNode.replaceChild(inp, nameEl);
+      }
+    });
+  } else {
+    nameEl = document.createElement('input');
+    nameEl.type = 'text'; nameEl.placeholder = 'Fuel name (add presets in Settings)';
+  }
+  var del = document.createElement('button'); del.className = 'btn-icon'; del.innerHTML = '&times;';
+  del.type = 'button'; del.onclick = function(){ container.removeChild(row); };
+  row.appendChild(timeInput); row.appendChild(nameEl); row.appendChild(del);
+  container.appendChild(row);
+}
+
+function collectFuel() {
+  var rows = document.getElementById('fuelEntries').querySelectorAll('.fuel-row');
+  var result = [];
+  rows.forEach(function(row) {
+    var inputs = row.querySelectorAll('input, select');
+    var timeVal = '', nameVal = '';
+    inputs.forEach(function(el) {
+      if (el.classList.contains('fuel-time')) timeVal = el.value.trim();
+      else nameVal = (el.tagName === 'SELECT' ? el.value : el.value.trim());
+    });
+    if (nameVal && nameVal !== '__custom__') result.push({ time: timeVal, name: nameVal });
+  });
+  return result;
+}
+
+// ---- ADD / SAVE RUN ----
+function addRun() {
+  var date = document.getElementById('fDate').value;
+  var dist = document.getElementById('fDist').value;
+  var durStr = document.getElementById('fDuration').value;
+  var type = document.getElementById('fType').value;
+  var feel = document.getElementById('fFeel').value;
+  var note = document.getElementById('fNote').value.trim();
+  var fuel = collectFuel();
+  var s = loadSettings();
+
+  if (!date) { alert('Please select a date.'); return; }
+  if (!dist || parseFloat(dist) < 0) { alert('Please enter a valid distance.'); return; }
+  var secs = parseDuration(durStr);
+  if (durStr.trim() && secs === null) { alert('Duration format: mm:ss or hh:mm:ss'); return; }
+
+  var runs = load();
+
+  if (editingId) {
+    // update existing
+    runs = runs.map(function(r) {
+      if (r.id !== editingId) return r;
+      return { id: r.id, date: date, dist: parseFloat(dist), secs: secs,
+               type: type, feel: feel, shoes: r.shoes, note: note, fuel: fuel };
+    });
+    editingId = null;
+  } else {
+    var run = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      date: date, dist: parseFloat(dist), secs: secs,
+      type: type, feel: feel, shoes: s.activeShoe || '', note: note, fuel: fuel
+    };
+    runs.push(run);
+  }
+
+  save(runs); refresh(runs); clearForm();
+}
+
+function confirmDelete(id) {
+  if (!confirm('Delete this run?')) return;
+  var runs = load().filter(function(r){ return r.id !== id; });
+  save(runs); refresh(runs);
+}
+
+function clearForm() {
+  editingId = null;
+  document.getElementById('fDate').value = todayISO();
+  document.getElementById('fDist').value = '';
+  document.getElementById('fDuration').value = '';
+  document.getElementById('fType').value = 'easy';
+  document.getElementById('fFeel').value = 'good';
+  document.getElementById('fNote').value = '';
+  document.getElementById('fuelEntries').innerHTML = '';
+  var logBtn = document.querySelector('.form-actions .btn-primary');
+  if (logBtn) logBtn.textContent = 'Log Run';
+  var panelTitle = document.querySelector('.panel:nth-of-type(3) .panel-title');
+  if (panelTitle) panelTitle.textContent = 'Log a Run';
+}
+
+// ---- ESCAPE ----
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escQ(str) { return String(str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+// ---- SHOE INDICATOR ----
+function updateShoeIndicator() {
+  var s = loadSettings();
+  var ind = document.getElementById('shoeIndicator');
+  var nm = document.getElementById('shoeIndicatorName');
+  if (s.activeShoe) {
+    nm.textContent = s.activeShoe;
+    ind.style.display = 'flex';
+  } else {
+    ind.style.display = 'none';
+  }
+}
+
+// ---- REFRESH ----
+function refresh(runs) {
+  updateStats(runs); updateWeekDots(runs); drawChart(runs); renderTable(runs); updateShoeIndicator();
+}
+
+// ---- INIT ----
+(function init() {
+  document.getElementById('fDate').value = todayISO();
+  // auto-set active shoe in form default
+  var runs = load();
+  refresh(runs);
+  window.addEventListener('resize', function(){ drawChart(load()); });
+})();
+</script>
+</body>
+</html>
